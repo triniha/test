@@ -48,5 +48,24 @@ jobs:
 
             # Update Apache configuration
             sudo nano /etc/apache2/sites-enabled/000-default.conf
+             <VirtualHost *:80>
+                ServerAdmin webmaster@localhost
+                DocumentRoot /var/www/laravel/public
+
+                <Directory />
+                    Options FollowSymLinks
+                    AllowOverride None
+                </Directory>
+                <Directory /var/www/laravel>
+                    AllowOverride All
+                </Directory>
+
+                ErrorLog \${APACHE_LOG_DIR}/error.log
+                CustomLog \${APACHE_LOG_DIR}/access.log combined
+            </VirtualHost>
+            EOF
+            sudo a2ensite laravel.conf
+            sudo a2enmod rewrite
             sudo systemctl restart apache2
           EOF
+           
