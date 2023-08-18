@@ -47,7 +47,7 @@ jobs:
             php artisan key:generate
 
             # Update Apache configuration
-            sudo nano /etc/apache2/sites-enabled/000-default.conf
+            echo ' 
              <VirtualHost *:80>
                 ServerAdmin webmaster@localhost
                 DocumentRoot /var/www/laravel/public
@@ -62,8 +62,8 @@ jobs:
 
                 ErrorLog \${APACHE_LOG_DIR}/error.log
                 CustomLog \${APACHE_LOG_DIR}/access.log combined
-            </VirtualHost>
-            EOF
+             </VirtualHost> ' | sudo tee /etc/apache2/sites-enabled/000-default.conf
+          
             sudo a2ensite laravel.conf
             sudo a2enmod rewrite
             sudo systemctl restart apache2
