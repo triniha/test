@@ -1,0 +1,45 @@
+name: Laravel Deployment
+
+on:
+  push:
+    branches:
+      - main  # Change this to the appropriate branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Set Up PHP, MySQL, Git, and Composer
+      run: |
+        sudo apt update
+        sudo apt upgrade -y
+        sudo apt install -y git apache2 mysql-server php php-gd php-mbstring php-xml php-zip php-curl
+        curl -sS https://getcomposer.org/installer | php
+        sudo mv composer.phar /usr/local/bin/composer
+        sudo chmod +x /usr/local/bin/composer
+
+    - name: Clone and Set Up Laravel Project
+      run: |
+        cd /var/www
+        sudo git clone https://github.com/laravel/laravel.git
+        cd /var/www/laravel
+        sudo composer install
+        sudo chown -R www-data:www-data /var/www/laravel
+        sudo chmod -R 755 /var/www/laravel
+        sudo chmod -R 777 /var/www/laravel/storage
+        sudo cp .env.example .env
+        php artisan key:generate
+
+    - name: Deploy to Ubuntu Server
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.PRIVATE_KEY1 }}
+      run: |
+        echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+
+        # Replace `your-username` with the actual username
+        ssh root@18.183.170.234 'cd /var/www/laravel && git pull && composer install && php artisan migrate'
