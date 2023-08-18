@@ -1,45 +1,57 @@
-name: Laravel Deployment
+name: Deploy WordPress
 
 on:
   push:
     branches:
-      - master  # Change this to the appropriate branch
+      - master
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Set Up PHP, MySQL, Git, and Composer
-      run: |
-        sudo apt update
-        sudo apt upgrade -y
-        sudo apt install -y git apache2 mysql-server php php-gd php-mbstring php-xml php-zip php-curl
-        curl -sS https://getcomposer.org/installer | php
-        sudo mv composer.phar /usr/local/bin/composer
-        sudo chmod +x /usr/local/bin/composer
+      - name: Configure SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.PRIVATE_KEY1 }}
 
-    - name: Clone and Set Up Laravel Project
-      run: |
-        cd /var/www
-        sudo git clone https://github.com/laravel/laravel.git
-        cd /var/www/laravel
-        sudo composer install
-        sudo chown -R www-data:www-data /var/www/laravel
-        sudo chmod -R 755 /var/www/laravel
-        sudo chmod -R 777 /var/www/laravel/storage
-        sudo cp .env.example .env
-        php artisan key:generate
+      - name: Deploy to EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER1 }}@${{ secrets.EC2_HOST1 }} 'bash -s' << 'EOF'
+            # Update system packages
+            sudo apt update && sudo apt upgrade -y
 
-    - name: Deploy to Ubuntu Server
-      env:
-        SSH_PRIVATE_KEY: ${{ secrets.PRIVATE_KEY1 }}
-      run: |
-        echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
+            # Install necessary software
+            sudo apt install -y git apache2 mysql-server php libapache2-mod-php php-gd php-mbstring php-xml php-zip php-curl
+            systemctl status apache2 --no-pager -l
+            systemctl status mysql --no-pager -l
+            sudo mysql
+            sudo mysql_secure_installation
+            sudo mysql
+            mysql
+            mysql -u root -p
 
-        # Replace `your-username` with the actual username
-        ssh root@18.183.170.234 'cd /var/www/laravel && git pull && composer install && php artisan migrate'
+            # Install Composer
+            curl -sS https://getcomposer.org/installer | php
+            sudo mv composer.phar /usr/local/bin/composer
+            sudo chmod +x /usr/local/bin/composer
+            composer -v
+
+            # Clone and set up Laravel project
+            cd /var/www
+            sudo git clone https://github.com/laravel/laravel.git
+            cd /var/www/laravel
+            sudo composer install
+            sudo chown -R www-data:www-data /var/www/laravel
+            sudo chmod -R 755 /var/www/laravel
+            sudo chmod -R 777 /var/www/laravel/storage
+            sudo cp .env.example .env
+            php artisan key:generate
+
+            # Update Apache configuration
+            sudo nano /etc/apache2/sites-enabled/000-default.conf
+            sudo systemctl restart apache2
+          EOF
