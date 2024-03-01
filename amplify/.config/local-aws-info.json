@@ -1,0 +1,7 @@
+{
+  "dev": {
+    "configLevel": "project",
+    "useProfile": false,
+    "awsConfigFilePath": "/var/lib/jenkins/.amplify/awscloudformation/61mBqwgY5m"
+  }
+}
